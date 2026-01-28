@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Call Platform - Make AI Voice Calls</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    #app {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      color: white;
+      margin-bottom: 40px;
+    }
+
+    .header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      font-size: 1.1rem;
+      opacity: 0.9;
+    }
+
+    .container {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    .templates-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+
+    .template-card {
+      border: 2px solid #e0e0e0;
+      border-radius: 15px;
+      padding: 25px;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-align: center;
+    }
+
+    .template-card:hover {
+      transform: translateY(-5px);
+      border-color: #667eea;
+      box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    }
+
+    .template-card.selected {
+      border-color: #667eea;
+      background: #f7f9ff;
+    }
+
+    .template-icon {
+      font-size: 3rem;
+      margin-bottom: 15px;
+    }
+
+    .template-name {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    .template-description {
+      font-size: 0.9rem;
+      color: #666;
+    }
+
+    .call-form {
+      background: #f9f9f9;
+      padding: 30px;
+      border-radius: 15px;
+      margin-top: 30px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #333;
+    }
+
+    .form-group input, .form-group textarea {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: border-color 0.3s;
+    }
+
+    .form-group input:focus, .form-group textarea:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    .btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 15px 40px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      width: 100%;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .alert {
+      padding: 15px 20px;
+      border-radius: 10px;
+      margin-top: 20px;
+      font-weight: 500;
+    }
+
+    .alert-success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .alert-error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #667eea;
+      font-weight: 600;
+    }
+
+    .history-section {
+      margin-top: 40px;
+      padding-top: 40px;
+      border-top: 2px solid #e0e0e0;
+    }
+
+    .history-section h2 {
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    .history-item {
+      background: #f9f9f9;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 15px;
+      border-left: 4px solid #667eea;
+    }
+
+    .history-item-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .history-item-phone {
+      font-weight: 600;
+      color: #333;
+    }
+
+    .history-item-time {
+      color: #666;
+      font-size: 0.9rem;
+    }
+
+    .history-item-template {
+      color: #667eea;
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 768px) {
+      .header h1 {
+        font-size: 2rem;
+      }
+      .container {
+        padding: 20px;
+      }
+      .templates-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="header">
+      <h1>📞 AI Call Platform</h1>
+      <p>Make AI-powered voice calls in seconds</p>
+    </div>
+
+    <div class="container">
+      <div class="loading" v-if="loading">
+        Loading templates...
+      </div>
+
+      <div v-else>
+        <h2 style="margin-bottom: 25px; color: #333;">Choose a Call Template</h2>
+        
+        <div class="templates-grid">
+          <div 
+            v-for="template in templates" 
+            :key="template.id"
+            class="template-card"
+            :class="{ selected: selectedTemplate?.id === template.id }"
+            @click="selectTemplate(template)"
+          >
+            <div class="template-icon">{{ template.icon }}</div>
+            <div class="template-name">{{ template.name }}</div>
+            <div class="template-description">{{ template.description }}</div>
+          </div>
+        </div>
+
+        <div v-if="selectedTemplate" class="call-form">
+          <h3 style="margin-bottom: 20px; color: #333;">{{ selectedTemplate.name }} Details</h3>
+          
+          <div class="form-group">
+            <label>Phone Number (with country code)</label>
+            <input 
+              type="tel" 
+              v-model="phoneNumber" 
+              placeholder="+1 234 567 8900"
+              pattern="\\+[0-9\\s]+"
+            />
+          </div>
+
+          <div class="form-group" v-if="selectedTemplate.id === 'custom'">
+            <label>Custom Message (Optional)</label>
+            <textarea 
+              v-model="customMessage" 
+              placeholder="Customize what the AI should say..."
+            ></textarea>
+          </div>
+
+          <button 
+            class="btn" 
+            @click="makeCall" 
+            :disabled="making || !phoneNumber"
+          >
+            {{ making ? 'Making Call...' : '📞 Make Call Now' }}
+          </button>
+
+          <div v-if="callStatus.message" class="alert" :class="callStatus.type === 'success' ? 'alert-success' : 'alert-error'">
+            {{ callStatus.message }}
+          </div>
+        </div>
+
+        <div class="history-section" v-if="history.length > 0">
+          <h2>Recent Calls</h2>
+          <div class="history-item" v-for="call in history" :key="call.id">
+            <div class="history-item-header">
+              <span class="history-item-phone">{{ call.phoneNumber }}</span>
+              <span class="history-item-time">{{ formatTime(call.createdAt) }}</span>
+            </div>
+            <div class="history-item-template">{{ call.template }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+
+    createApp({
+      data() {
+        return {
+          templates: [],
+          selectedTemplate: null,
+          phoneNumber: '',
+          customMessage: '',
+          loading: true,
+          making: false,
+          callStatus: { message: '', type: '' },
+          history: [],
+          apiBaseUrl: 'http://localhost:3000/api'
+        };
+      },
+      mounted() {
+        this.loadTemplates();
+        this.loadHistory();
+      },
+      methods: {
+        async loadTemplates() {
+          try {
+            const response = await axios.get(`${this.apiBaseUrl}/templates`);
+            this.templates = response.data.templates;
+            this.loading = false;
+          } catch (error) {
+            console.error('Error loading templates:', error);
+            this.loading = false;
+            this.callStatus = { message: 'Failed to load templates. Is the server running?', type: 'error' };
+          }
+        },
+        async loadHistory() {
+          try {
+            const response = await axios.get(`${this.apiBaseUrl}/calls/history`);
+            this.history = response.data.history;
+          } catch (error) {
+            console.error('Error loading history:', error);
+          }
+        },
+        selectTemplate(template) {
+          this.selectedTemplate = template;
+          this.callStatus = { message: '', type: '' };
+        },
+        async makeCall() {
+          if (!this.phoneNumber || !this.selectedTemplate) return;
+
+          this.making = true;
+          this.callStatus = { message: '', type: '' };
+
+          try {
+            const payload = {
+              phoneNumber: this.phoneNumber,
+              templateId: this.selectedTemplate.id
+            };
+
+            if (this.customMessage && this.selectedTemplate.id === 'custom') {
+              payload.customizations = {
+                systemMessage: this.customMessage
+              };
+            }
+
+            const response = await axios.post(`${this.apiBaseUrl}/calls/make`, payload);
+
+            this.callStatus = {
+              message: `✅ Call initiated successfully! The phone should ring in a few seconds.`,
+              type: 'success'
+            };
+
+            // Reload history
+            this.loadHistory();
+
+            // Clear form
+            setTimeout(() => {
+              this.phoneNumber = '';
+              this.customMessage = '';
+              this.callStatus = { message: '', type: '' };
+            }, 3000);
+
+          } catch (error) {
+            this.callStatus = {
+              message: `❌ ${error.response?.data?.error || error.message || 'Failed to make call'}`,
+              type: 'error'
+            };
+          } finally {
+            this.making = false;
+          }
+        },
+        formatTime(isoString) {
+          const date = new Date(isoString);
+          return date.toLocaleString();
+        }
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
